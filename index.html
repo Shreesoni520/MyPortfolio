@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Shree — Creative Developer</title>
+  <meta name="description" content="Shree — creative frontend developer. Crafting expressive digital experiences." />
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png?v=6" />
+  <link rel="icon" type="image/png" sizes="48x48" href="assets/favicon-48.png?v=6" />
+  <link rel="shortcut icon" href="assets/favicon.png?v=6" />
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=6" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Sora:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css?v=20260807y" />
+</head>
+<body>
+  <div class="scroll-progress" aria-hidden="true"><i></i></div>
+  <div class="loader" aria-hidden="true">
+    <div class="loader-inner">
+      <span class="loader-name">Shree</span>
+      <div class="loader-bar"><i></i></div>
+    </div>
+  </div>
+
+  <div class="noise" aria-hidden="true"></div>
+
+  <header class="site-header">
+    <a href="#top" class="logo">Shree<span class="logo-dot">.</span></a>
+    <nav class="nav" aria-label="Primary">
+      <a href="#work"><em>01</em> Work</a>
+      <a href="#about"><em>02</em> About</a>
+      <a href="#process"><em>03</em> Process</a>
+      <a href="#contact"><em>04</em> Contact</a>
+    </nav>
+    <a href="#contact" class="header-cta">Available for work</a>
+    <button class="nav-toggle" aria-label="Open menu" aria-expanded="false">
+      <span></span><span></span>
+    </button>
+  </header>
+
+  <div class="mobile-nav" hidden>
+    <a href="#work">Work</a>
+    <a href="#about">About</a>
+    <a href="#process">Process</a>
+    <a href="#contact">Contact</a>
+  </div>
+
+  <main id="top">
+    <section class="hero">
+      <canvas class="ascii-field ascii-field--hero" data-ascii="hero" aria-hidden="true"></canvas>
+      <div class="hero-stage" aria-hidden="true">
+        <div class="hero-wash"></div>
+        <div class="hero-ring"></div>
+      </div>
+
+      <div class="hero-top">
+        <p class="hero-role">Creative Frontend Developer</p>
+        <p class="hero-loc">Based worldwide · Building since 2026</p>
+      </div>
+
+      <div class="hero-brand-wrap">
+        <h1 class="hero-brand" data-split>Shree</h1>
+      </div>
+
+      <div class="signal-line signal-line--hero" data-signal tabindex="0">
+        <span class="signal-line__rail"></span>
+        <span class="signal-line__code" data-text="SHREE · FRONTEND · MOTION · BUILD · CRAFT · 2026"></span>
+      </div>
+
+      <div class="hero-bottom">
+        <p class="hero-line">
+          I design and build interfaces with presence —
+          sharp structure, smooth motion, and a clear point of view.
+        </p>
+        <div class="hero-actions">
+          <a href="#work" class="btn btn-fill">
+            <span>View selected work</span>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
+          </a>
+          <a href="#contact" class="btn btn-line">Start a project</a>
+        </div>
+      </div>
+    </section>
+
+    <div class="signal-line signal-line--section" data-signal tabindex="0">
+      <span class="signal-line__rail"></span>
+      <span class="signal-line__code" data-text="HTML · CSS · JS · UI · SYSTEMS · DETAILS · POLISH"></span>
+    </div>
+
+    <section id="work" class="work">
+      <div class="work-head">
+        <div>
+          <p class="kicker">Selected work</p>
+          <h2 class="display">Work I’ve<br />built &amp; deployed</h2>
+        </div>
+        <p class="work-note">Public work you can open right now — private and unreleased projects stay off the list.</p>
+      </div>
+
+      <div class="work-list">
+        <a href="https://shreesoni.vercel.app" class="work-item" data-work style="--tone: #1c1e28" target="_blank" rel="noopener noreferrer">
+          <div class="work-index">01</div>
+          <div class="work-body">
+            <h3>This Portfolio</h3>
+            <p>My personal site — animated UI, custom cursor, and a clean showcase of what I build.</p>
+            <ul>
+              <li>HTML</li>
+              <li>CSS</li>
+              <li>JavaScript</li>
+            </ul>
+          </div>
+          <div class="work-preview">
+            <div class="preview-frame land">
+              <div class="pf-hero-block"></div>
+              <div class="pf-cta"></div>
+            </div>
+          </div>
+          <span class="work-arrow" aria-hidden="true">↗</span>
+        </a>
+
+        <a href="https://shrees-extractions.vercel.app" class="work-item" data-work style="--tone: #1a2230" target="_blank" rel="noopener noreferrer">
+          <div class="work-index">02</div>
+          <div class="work-body">
+            <h3>Extract</h3>
+            <p>Private person-to-person file sharing with timed access and ephemeral chat.</p>
+            <ul>
+              <li>JavaScript</li>
+              <li>Live site</li>
+              <li>Vercel</li>
+            </ul>
+          </div>
+          <div class="work-preview">
+            <div class="preview-frame">
+              <div class="pf-top"><i></i><i></i><i></i></div>
+              <div class="pf-chart">
+                <span style="--h:45%"></span>
+                <span style="--h:72%"></span>
+                <span style="--h:38%"></span>
+                <span style="--h:88%"></span>
+                <span style="--h:56%"></span>
+                <span style="--h:67%"></span>
+              </div>
+            </div>
+          </div>
+          <span class="work-arrow" aria-hidden="true">↗</span>
+        </a>
+
+        <a href="https://github.com/Shreesoni520" class="work-item" data-work style="--tone: #241820" target="_blank" rel="noopener noreferrer">
+          <div class="work-index">03</div>
+          <div class="work-body">
+            <h3>More on GitHub</h3>
+            <p>Code, experiments, and everything I’m building next — follow along on GitHub.</p>
+            <ul>
+              <li>GitHub</li>
+              <li>Open source</li>
+              <li>Projects</li>
+            </ul>
+          </div>
+          <div class="work-preview">
+            <div class="preview-frame notes">
+              <div class="pf-line w80"></div>
+              <div class="pf-line w95"></div>
+              <div class="pf-line w60"></div>
+              <div class="pf-line w85"></div>
+            </div>
+          </div>
+          <span class="work-arrow" aria-hidden="true">↗</span>
+        </a>
+      </div>
+    </section>
+
+    <section id="about" class="about">
+      <canvas class="ascii-field ascii-field--about" data-ascii="about" aria-hidden="true"></canvas>
+      <div class="about-sticky">
+        <p class="kicker">About</p>
+        <h2 class="display">A builder who cares how it feels</h2>
+      </div>
+      <div class="about-copy">
+        <p class="about-lead">
+          I’m Shree — a frontend developer focused on expressive interfaces that still feel effortless to use.
+        </p>
+        <p>
+          I don’t chase trends for the sake of it. I care about hierarchy, pacing, and details people notice without knowing why: the way type lands, how a button answers a hover, when a page should breathe.
+        </p>
+        <p>
+          Right now I’m sharpening my craft in modern frontend — building personal projects, polishing motion, and learning how great products are structured.
+        </p>
+        <div class="about-facts">
+          <div>
+            <strong data-count="3" data-stat="repos">0</strong>
+            <span>Public repos</span>
+          </div>
+          <div>
+            <strong data-count="1" data-stat="live">0</strong>
+            <span>Live site online</span>
+          </div>
+          <div>
+            <strong>∞</strong>
+            <span>Curiosity for craft</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="process" class="process">
+      <div class="process-head">
+        <p class="kicker">How I work</p>
+        <h2 class="display">From idea to something people can feel</h2>
+      </div>
+      <ol class="process-steps">
+        <li class="step">
+          <span class="step-line" aria-hidden="true"><i></i></span>
+          <span class="step-num">01</span>
+          <h3>Discover</h3>
+          <p>Understand the goal, audience, and constraints before touching pixels or code.</p>
+        </li>
+        <li class="step">
+          <span class="step-line" aria-hidden="true"><i></i></span>
+          <span class="step-num">02</span>
+          <h3>Structure</h3>
+          <p>Map layout, hierarchy, and content flow so the page has one clear job per section.</p>
+        </li>
+        <li class="step">
+          <span class="step-line" aria-hidden="true"><i></i></span>
+          <span class="step-num">03</span>
+          <h3>Craft</h3>
+          <p>Build with clean HTML, intentional CSS, and motion that supports — never distracts.</p>
+        </li>
+        <li class="step">
+          <span class="step-line" aria-hidden="true"><i></i></span>
+          <span class="step-num">04</span>
+          <h3>Polish</h3>
+          <p>Test on real screens, tighten timing, and leave something that feels finished.</p>
+        </li>
+      </ol>
+    </section>
+
+    <section class="stack" id="stack">
+      <div class="stack-head">
+        <div>
+          <p class="kicker">Tech stack</p>
+          <h2 class="display">Tools I build with<span>.</span></h2>
+        </div>
+        <p class="stack-note">
+          Modern frameworks &amp; tools for websites that are fast, beautiful, and built to last.
+        </p>
+      </div>
+
+      <ul class="visually-hidden">
+        <li>React</li>
+        <li>Next.js</li>
+        <li>Tailwind CSS</li>
+        <li>TypeScript</li>
+        <li>JavaScript</li>
+        <li>HTML/CSS</li>
+        <li>Framer Motion</li>
+        <li>Node.js</li>
+        <li>Vercel</li>
+        <li>Git</li>
+        <li>GitHub</li>
+        <li>Modern CSS</li>
+      </ul>
+
+      <div class="stack-board" aria-hidden="true">
+        <div class="stack-rail">
+          <div class="stack-rail__track" data-marquee="left">
+            <div class="stack-rail__group">
+              <span class="chip"><img src="https://cdn.simpleicons.org/react/61DAFB" alt="" width="18" height="18" loading="lazy" />React</span>
+              <span class="chip"><img src="https://cdn.simpleicons.org/nextdotjs/FFFFFF" alt="" width="18" height="18" loading="lazy" />Next.js</span>
+              <span class="chip"><img src="https://cdn.simpleicons.org/tailwindcss/38BDF8" alt="" width="18" height="18" loading="lazy" />Tailwind CSS</span>
+              <span class="chip"><img src="https://cdn.simpleicons.org/typescript/3178C6" alt="" width="18" height="18" loading="lazy" />TypeScript</span>
+              <span class="chip"><img src="https://cdn.simpleicons.org/javascript/F7DF1E" alt="" width="18" height="18" loading="lazy" />JavaScript</span>
+              <span class="chip"><img src="https://cdn.simpleicons.org/html5/E34F26" alt="" width="18" height="18" loading="lazy" />HTML/CSS</span>
+              <span class="chip"><img src="https://cdn.simpleicons.org/framer/0055FF" alt="" width="18" height="18" loading="lazy" />Framer Motion</span>
+              <span class="chip"><img src="https://cdn.simpleicons.org/vercel/FFFFFF" alt="" width="18" height="18" loading="lazy" />Vercel</span>
+              <span class="chip"><img src="https://cdn.simpleicons.org/nodedotjs/339933" alt="" width="18" height="18" loading="lazy" />Node.js</span>
+              <span class="chip"><img src="https://cdn.simpleicons.org/git/F05032" alt="" width="18" height="18" loading="lazy" />Git</span>
+              <span class="chip"><img src="https://cdn.simpleicons.org/github/FFFFFF" alt="" width="18" height="18" loading="lazy" />GitHub</span>
+              <span class="chip"><img src="https://cdn.simpleicons.org/css/663399" alt="" width="18" height="18" loading="lazy" />Modern CSS</span>
+            </div>
+          </div>
+        </div>
+        <div class="stack-rail">
+          <div class="stack-rail__track" data-marquee="right">
+            <div class="stack-rail__group">
+              <span class="chip"><img src="https://cdn.simpleicons.org/vercel/FFFFFF" alt="" width="18" height="18" loading="lazy" />Vercel</span>
+              <span class="chip"><img src="https://cdn.simpleicons.org/javascript/F7DF1E" alt="" width="18" height="18" loading="lazy" />JavaScript</span>
+              <span class="chip"><img src="https://cdn.simpleicons.org/html5/E34F26" alt="" width="18" height="18" loading="lazy" />HTML/CSS</span>
+              <span class="chip"><img src="https://cdn.simpleicons.org/nodedotjs/339933" alt="" width="18" height="18" loading="lazy" />Node.js</span>
+              <span class="chip"><img src="https://cdn.simpleicons.org/github/FFFFFF" alt="" width="18" height="18" loading="lazy" />GitHub</span>
+              <span class="chip"><img src="https://cdn.simpleicons.org/react/61DAFB" alt="" width="18" height="18" loading="lazy" />React</span>
+              <span class="chip"><img src="https://cdn.simpleicons.org/nextdotjs/FFFFFF" alt="" width="18" height="18" loading="lazy" />Next.js</span>
+              <span class="chip"><img src="https://cdn.simpleicons.org/tailwindcss/38BDF8" alt="" width="18" height="18" loading="lazy" />Tailwind CSS</span>
+              <span class="chip"><img src="https://cdn.simpleicons.org/typescript/3178C6" alt="" width="18" height="18" loading="lazy" />TypeScript</span>
+              <span class="chip"><img src="https://cdn.simpleicons.org/framer/0055FF" alt="" width="18" height="18" loading="lazy" />Framer Motion</span>
+              <span class="chip"><img src="https://cdn.simpleicons.org/git/F05032" alt="" width="18" height="18" loading="lazy" />Git</span>
+              <span class="chip"><img src="https://cdn.simpleicons.org/css/663399" alt="" width="18" height="18" loading="lazy" />Modern CSS</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="contact" class="contact">
+      <p class="kicker">Contact</p>
+      <h2 class="contact-title">
+        <span>Let’s build</span>
+        <span class="italic">something sharp.</span>
+      </h2>
+      <p class="contact-text">Open to freelance, collabs, and roles where craft actually matters.</p>
+
+      <div class="site-links">
+        <a class="site-link" href="https://shreesoni.vercel.app" target="_blank" rel="noopener noreferrer">
+          <span class="site-link-label">Portfolio</span>
+          <span class="site-link-url">shreesoni.vercel.app</span>
+          <span class="site-link-go">Open ↗</span>
+        </a>
+        <a class="site-link" href="https://shrees-extractions.vercel.app" target="_blank" rel="noopener noreferrer">
+          <span class="site-link-label">Extract</span>
+          <span class="site-link-url">shrees-extractions.vercel.app</span>
+          <span class="site-link-go">Open ↗</span>
+        </a>
+      </div>
+
+      <a href="mailto:shreesoni520@gmail.com" class="contact-mail">
+        <span>shreesoni520@gmail.com</span>
+        <i></i>
+      </a>
+      <div class="contact-links">
+        <a href="https://github.com/Shreesoni520" target="_blank" rel="noopener noreferrer">GitHub</a>
+        <span class="dot" aria-hidden="true">·</span>
+        <a href="https://x.com/Shreessoni520" target="_blank" rel="noopener noreferrer">X</a>
+        <span class="dot" aria-hidden="true">·</span>
+        <a href="https://www.instagram.com/krishna_soni.52/" target="_blank" rel="noopener noreferrer">Instagram</a>
+        <span class="dot" aria-hidden="true">·</span>
+        <a href="mailto:shreesoni520@gmail.com">contact</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>© <span id="year"></span> Shree</p>
+    <p>Designed &amp; coded with intention</p>
+    <a href="#top">Back to top</a>
+  </footer>
+
+  <script src="js/main.js?v=20260807y"></script>
+</body>
+</html>
