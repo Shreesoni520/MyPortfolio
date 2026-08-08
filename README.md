@@ -42,13 +42,17 @@ I’m Shree — a frontend developer who builds clean, expressive sites with pre
 MyPortfolio/
 ├── index.html
 ├── css/styles.css
-├── js/main.js
+├── js/
+│   ├── main.js
+│   └── ascii-matrix.js
 ├── assets/
 │   ├── favicon.png
 │   ├── favicon-32.png
 │   ├── favicon-48.png
 │   ├── apple-touch-icon.png
-│   └── shree.png
+│   └── work/
+│       ├── portfolio.png
+│       └── extract.png
 └── README.md
 ```
 

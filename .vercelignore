@@ -1,5 +1,4 @@
-_tmp_cool
-_tmp_frames
+_tmp_*
 .git
 .env*
 *.log
