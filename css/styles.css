@@ -1290,9 +1290,10 @@ body.is-ready .hero-bottom { animation-delay: 0.75s; }
 }
 
 .site-link {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 0.85rem;
   align-items: center;
-  gap: 1.25rem;
   padding: 1rem 1.15rem;
   border: 1px solid var(--line);
   border-radius: 1rem;
@@ -1307,19 +1308,14 @@ body.is-ready .hero-bottom { animation-delay: 0.75s; }
 }
 
 .site-link-label {
-  flex: 0 0 8.75rem;
-  width: 8.75rem;
   font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--accent);
-  white-space: nowrap;
 }
 
 .site-link-url {
-  flex: 1 1 auto;
-  min-width: 0;
   font-family: var(--font-display);
   font-weight: 600;
   font-size: clamp(0.85rem, 2vw, 1.05rem);
@@ -1330,13 +1326,10 @@ body.is-ready .hero-bottom { animation-delay: 0.75s; }
 }
 
 .site-link-go {
-  flex: 0 0 auto;
-  margin-left: auto;
   font-size: 0.85rem;
   font-weight: 600;
   color: var(--muted);
   transition: color 0.25s;
-  white-space: nowrap;
 }
 
 .site-link:hover .site-link-go {
