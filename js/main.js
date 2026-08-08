@@ -399,16 +399,18 @@
     { passive: true }
   );
 
-  // Hero ASCII field — ascii-motion style ambient grid + soft cursor bloom
+  // ASCII spotlight (your liked version) — polished with ascii-motion density feel
   (() => {
     const canvas = document.querySelector('[data-ascii="hero"]');
     if (!canvas) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (window.matchMedia("(hover: none), (pointer: coarse)").matches) return;
 
-    const RAMP = " .:-+*=%#";
+    // Richer shading like ascii-motion, still only around the cursor
+    const RAMP = ".:-+*=%#@";
+    const CELL = 16;
+    const RADIUS = 7.2;
     const IDLE_MS = 10000;
-    const FRAME_MS = 1000 / 22; // calm fps — stays smooth
-    const MAX_CELLS = 1600;
     const zone = canvas.closest(".hero") || canvas.parentElement;
     const ctx = canvas.getContext("2d", { alpha: true, desynchronized: true });
     if (!zone || !ctx) return;
@@ -418,231 +420,173 @@
       return s - Math.floor(s);
     };
 
-    const noise = (x, y) => {
-      const xi = x | 0;
-      const yi = y | 0;
-      const xf = x - xi;
-      const yf = y - yi;
-      const u = xf * xf * (3 - 2 * xf);
-      const v = yf * yf * (3 - 2 * yf);
-      const a = hash(xi, yi);
-      const b = hash(xi + 1, yi);
-      const c = hash(xi, yi + 1);
-      const d = hash(xi + 1, yi + 1);
-      return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
-    };
-
     let width = 0;
     let height = 0;
     let cols = 0;
     let rows = 0;
-    let cell = 20;
-    let mx = 0.55;
-    let my = 0.42;
-    let tx = 0.55;
-    let ty = 0.42;
+    let mx = 0;
+    let my = 0;
+    let tx = 0;
+    let ty = 0;
     let hover = false;
-    let spot = 0; // cursor bloom strength
-    let active = true;
+    let presence = 0;
     let raf = 0;
     let lastDraw = 0;
     let lastMove = 0;
     let t0 = performance.now();
-    const coarse = window.matchMedia("(hover: none), (pointer: coarse)").matches;
 
     const resize = () => {
       const rect = zone.getBoundingClientRect();
       width = Math.max(1, Math.round(rect.width) || 320);
       height = Math.max(1, Math.round(rect.height) || 240);
-      cell = width * height > 1_200_000 ? 22 : 18;
-      cols = Math.ceil(width / cell) + 1;
-      rows = Math.ceil(height / cell) + 1;
-      while (cols * rows > MAX_CELLS && cell < 28) {
-        cell += 1;
-        cols = Math.ceil(width / cell) + 1;
-        rows = Math.ceil(height / cell) + 1;
-      }
+      cols = Math.ceil(width / CELL) + 1;
+      rows = Math.ceil(height / CELL) + 1;
       canvas.width = width;
       canvas.height = height;
       canvas.style.width = `${width}px`;
       canvas.style.height = `${height}px`;
+      ctx.clearRect(0, 0, width, height);
     };
 
     const draw = (now) => {
       raf = 0;
-      if (!active) {
+      const active = hover && now - lastMove < IDLE_MS;
+      presence += ((active ? 1 : 0) - presence) * (active ? 0.22 : 0.07);
+      mx += (tx - mx) * 0.22;
+      my += (ty - my) * 0.22;
+
+      if (presence < 0.02) {
         ctx.clearRect(0, 0, width, height);
+        presence = 0;
+        if (hover) raf = requestAnimationFrame(draw);
         return;
       }
 
-      if (now - lastDraw < FRAME_MS) {
+      if (now - lastDraw < 30) {
         raf = requestAnimationFrame(draw);
         return;
       }
       lastDraw = now;
 
-      const idle = hover && now - lastMove > IDLE_MS;
-      const wantSpot = hover && !idle && !coarse;
-      spot += ((wantSpot ? 1 : 0) - spot) * (wantSpot ? 0.14 : 0.06);
-      mx += (tx - mx) * (wantSpot ? 0.12 : 0.03);
-      my += (ty - my) * (wantSpot ? 0.12 : 0.03);
-
       const t = (now - t0) * 0.001;
-      const px = mx * width;
-      const py = my * height;
-      const spotR = Math.min(width, height) * 0.26;
+      const spotR = RADIUS * CELL;
       const spotR2 = spotR * spotR;
+      const c0 = Math.max(0, ((mx - spotR) / CELL) | 0);
+      const c1 = Math.min(cols - 1, Math.ceil((mx + spotR) / CELL));
+      const r0 = Math.max(0, ((my - spotR) / CELL) | 0);
+      const r1 = Math.min(rows - 1, Math.ceil((my + spotR) / CELL));
 
       ctx.clearRect(0, 0, width, height);
-      ctx.font = `500 ${Math.max(10, cell - 5)}px "IBM Plex Mono", ui-monospace, monospace`;
+      ctx.font = `500 ${CELL - 3}px "IBM Plex Mono", ui-monospace, monospace`;
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      ctx.fillStyle = "#b9d4f5";
+      ctx.fillStyle = "#c6ddff";
 
-      for (let r = 0; r < rows; r += 1) {
-        for (let c = 0; c < cols; c += 1) {
-          // Skip every other cell on the faintest layer for cheap fill
-          const x = c * cell + cell * 0.5;
-          const y = r * cell + cell * 0.5;
+      for (let r = r0; r <= r1; r += 1) {
+        for (let c = c0; c <= c1; c += 1) {
+          const x = c * CELL + CELL * 0.5;
+          const y = r * CELL + CELL * 0.5;
+          const dx = x - mx;
+          const dy = y - my;
 
-          // Slow flowing ambient field (ascii-motion vibe)
-          const flow = noise(c * 0.07 + t * 0.11, r * 0.06 - t * 0.08);
-          let n = 0.1 + flow * 0.28;
+          // Organic blotch + slight shimmer (ascii-motion texture, not a hard ring)
+          const warp = 0.82 + 0.18 * hash(c * 0.9 + t * 0.35, r * 0.9 - t * 0.28);
+          const d2 = (dx * dx * 0.82 + dy * dy * 1.18) * warp;
+          if (d2 > spotR2) continue;
 
-          // Soft drifting clouds
-          n += noise(c * 0.03 - t * 0.04, r * 0.035 + t * 0.03) * 0.18;
+          const fall = 1 - Math.sqrt(d2) / spotR;
+          const grain = 0.72 + 0.28 * hash(c + 3.1, r - 1.7);
+          let n = fall * fall * (0.35 + fall * 0.65) * grain * presence;
 
-          if (spot > 0.02) {
-            const dx = x - px;
-            const dy = y - py;
-            const d2 = dx * dx * 0.9 + dy * dy * 1.15;
-            if (d2 < spotR2) {
-              const fall = 1 - Math.sqrt(d2) / spotR;
-              n += fall * fall * 0.7 * spot;
-            }
-          }
+          // Soft outer mist of dots
+          if (fall < 0.35) n *= 0.55 + fall;
 
-          // Keep big "Shree" readable
           const bx = x / width - 0.28;
           const by = y / height - 0.48;
-          const hole = Math.max(0, 1 - Math.sqrt(bx * bx + by * by) / 0.26);
-          n *= 1 - hole * hole * 0.7;
-
-          if (n < 0.12) {
-            // ultra-faint dot grid (like ascii-motion)
-            if (((c + r) & 3) !== 0) continue;
-            ctx.globalAlpha = 0.05;
-            ctx.fillText(".", x, y);
-            continue;
-          }
-
-          if (n < 0.2 && ((c + r) & 1) === 1) continue;
+          const hole = Math.max(0, 1 - Math.sqrt(bx * bx + by * by) / 0.22);
+          n *= 1 - hole * hole * 0.62;
+          if (n < 0.07) continue;
 
           const idx = Math.min(RAMP.length - 1, (n * (RAMP.length - 0.001)) | 0);
-          const ch = RAMP[idx];
-          if (ch === " ") continue;
-          ctx.globalAlpha = 0.08 + n * 0.42;
-          ctx.fillText(ch, x, y);
+          ctx.globalAlpha = (0.14 + n * 0.62) * presence;
+          ctx.fillText(RAMP[idx], x, y);
         }
       }
       ctx.globalAlpha = 1;
-      raf = requestAnimationFrame(draw);
+
+      if (hover || presence > 0.02) raf = requestAnimationFrame(draw);
     };
 
     const kick = () => {
-      if (!raf && active) raf = requestAnimationFrame(draw);
+      if (!raf) raf = requestAnimationFrame(draw);
     };
 
-    const toNorm = (e) => {
-      const rect = zone.getBoundingClientRect();
+    const toLocal = (e) => {
+      const rect = canvas.getBoundingClientRect();
       if (rect.width < 1 || rect.height < 1) return null;
       return {
-        x: Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width)),
-        y: Math.min(1, Math.max(0, (e.clientY - rect.top) / rect.height)),
+        x: ((e.clientX - rect.left) / rect.width) * width,
+        y: ((e.clientY - rect.top) / rect.height) * height,
       };
     };
 
     resize();
-    mx = tx;
-    my = ty;
-
-    const io = new IntersectionObserver(
-      ([entry]) => {
-        active = !!entry?.isIntersecting;
-        if (active) {
-          t0 = performance.now() - 1000;
-          kick();
-        } else {
-          cancelAnimationFrame(raf);
-          raf = 0;
-          ctx.clearRect(0, 0, width, height);
-        }
-      },
-      { threshold: 0.08 }
-    );
-    io.observe(zone);
-
     let resizeTimer = 0;
     window.addEventListener(
       "resize",
       () => {
         clearTimeout(resizeTimer);
-        resizeTimer = setTimeout(() => {
-          resize();
-          kick();
-        }, 150);
+        resizeTimer = setTimeout(resize, 150);
       },
       { passive: true }
     );
 
-    if (!coarse) {
-      zone.addEventListener(
-        "pointerenter",
-        (e) => {
-          hover = true;
-          lastMove = performance.now();
-          const p = toNorm(e);
-          if (p) {
-            tx = p.x;
-            ty = p.y;
-          }
-          kick();
-        },
-        { passive: true }
-      );
-      zone.addEventListener(
-        "pointermove",
-        (e) => {
-          hover = true;
-          lastMove = performance.now();
-          const p = toNorm(e);
-          if (!p) return;
-          tx = p.x;
-          ty = p.y;
-          kick();
-        },
-        { passive: true }
-      );
-      zone.addEventListener(
-        "pointerleave",
-        () => {
-          hover = false;
-          kick();
-        },
-        { passive: true }
-      );
-    }
+    window.addEventListener(
+      "scroll",
+      () => {
+        hover = false;
+        presence = 0;
+        lastMove = 0;
+        if (raf) {
+          cancelAnimationFrame(raf);
+          raf = 0;
+        }
+        ctx.clearRect(0, 0, width, height);
+      },
+      { passive: true }
+    );
+
+    zone.addEventListener(
+      "pointermove",
+      (e) => {
+        const p = toLocal(e);
+        if (!p) return;
+        hover = true;
+        lastMove = performance.now();
+        tx = p.x;
+        ty = p.y;
+        kick();
+      },
+      { passive: true }
+    );
+
+    zone.addEventListener(
+      "pointerleave",
+      () => {
+        hover = false;
+        kick();
+      },
+      { passive: true }
+    );
 
     document.addEventListener("visibilitychange", () => {
-      if (document.hidden) {
-        cancelAnimationFrame(raf);
-        raf = 0;
-        ctx.clearRect(0, 0, width, height);
-      } else if (active) {
-        kick();
-      }
+      if (!document.hidden) return;
+      hover = false;
+      presence = 0;
+      lastMove = 0;
+      cancelAnimationFrame(raf);
+      raf = 0;
+      ctx.clearRect(0, 0, width, height);
     });
-
-    kick();
   })();
 })();
