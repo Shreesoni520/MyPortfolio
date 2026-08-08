@@ -1,6 +1,9 @@
+import Lenis from "https://cdn.jsdelivr.net/npm/lenis@1.3.25/+esm";
+
 (() => {
   const body = document.body;
   body.classList.add("is-loading");
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   const year = document.getElementById("year");
   if (year) year.textContent = String(new Date().getFullYear());
@@ -20,20 +23,44 @@
     }
   });
 
-  // Top scroll progress — direct update (no extra animation loop)
+  // Lenis smooth scroll (same feel as premium portfolios like jigneshis)
+  let lenis = null;
+  if (!reduceMotion) {
+    lenis = new Lenis({
+      duration: 1.2,
+      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      smoothWheel: true,
+      syncTouch: false,
+      touchMultiplier: 1.4,
+      wheelMultiplier: 1,
+    });
+    lenis.stop();
+    const lenisLoop = (time) => {
+      lenis.raf(time);
+      requestAnimationFrame(lenisLoop);
+    };
+    requestAnimationFrame(lenisLoop);
+    window.__lenis = lenis;
+  }
+
+  // Top scroll progress — driven by Lenis when available
   const progressBar = document.querySelector(".scroll-progress i");
   let scrollTracking = false;
 
   const readProgress = () => {
     if (!scrollTracking || !progressBar) return;
-    const doc = document.documentElement;
-    const scrollTop = doc.scrollTop || document.body.scrollTop;
-    const height = doc.scrollHeight - doc.clientHeight;
-    const p = height > 0 ? scrollTop / height : 0;
+    const scrollTop = lenis
+      ? lenis.scroll
+      : document.documentElement.scrollTop || document.body.scrollTop;
+    const limit = lenis
+      ? lenis.limit
+      : document.documentElement.scrollHeight - document.documentElement.clientHeight;
+    const p = limit > 0 ? scrollTop / limit : 0;
     progressBar.style.transform = `scaleX(${Math.min(1, Math.max(0, p))})`;
   };
 
-  window.addEventListener("scroll", readProgress, { passive: true });
+  if (lenis) lenis.on("scroll", readProgress);
+  else window.addEventListener("scroll", readProgress, { passive: true });
   window.addEventListener("resize", readProgress);
 
   // Loader then hero entrance — finish when shared lineFill ends (1.6s)
@@ -42,6 +69,7 @@
     body.classList.remove("is-loading");
     body.style.overflow = "";
     document.documentElement.style.overflow = "";
+    lenis?.start();
   };
 
   const finishLoader = () => {
@@ -93,7 +121,7 @@
   const revealTargets = document.querySelectorAll(revealGroups.join(", "));
   revealTargets.forEach((el, i) => {
     el.classList.add("reveal-up");
-    el.style.setProperty("--delay", `${(i % 5) * 120}ms`);
+    el.style.setProperty("--delay", `${(i % 6) * 90}ms`);
   });
 
   const io = new IntersectionObserver(
@@ -170,7 +198,7 @@
     line.addEventListener("focus", run);
   });
 
-  // Slightly softer anchor scrolling feel
+  // Anchor scrolling through Lenis for the same buttered glide
   document.querySelectorAll('a[href^="#"]').forEach((link) => {
     link.addEventListener("click", (e) => {
       const id = link.getAttribute("href");
@@ -178,7 +206,11 @@
       const target = document.querySelector(id);
       if (!target) return;
       e.preventDefault();
-      target.scrollIntoView({ behavior: "smooth", block: "start" });
+      if (lenis) {
+        lenis.scrollTo(target, { offset: -8, duration: 1.35 });
+      } else {
+        target.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
+      }
     });
   });
 
@@ -368,6 +400,7 @@
     toggle?.setAttribute("aria-expanded", "false");
     if (mobileNav) mobileNav.hidden = true;
     document.body.style.overflow = "";
+    if (loaderDone) lenis?.start();
   };
 
   toggle?.addEventListener("click", () => {
@@ -375,6 +408,11 @@
     toggle.setAttribute("aria-expanded", String(!open));
     if (mobileNav) mobileNav.hidden = open;
     document.body.style.overflow = open ? "" : "hidden";
+    if (open) {
+      if (loaderDone) lenis?.start();
+    } else {
+      lenis?.stop();
+    }
   });
 
   mobileNav?.querySelectorAll("a").forEach((a) => a.addEventListener("click", closeNav));
@@ -578,4 +616,24 @@
       ctx.clearRect(0, 0, width, height);
     });
   })();
+
+  // Copy Discord username (no public profile URL without numeric ID)
+  document.querySelectorAll("[data-copy]").forEach((el) => {
+    el.addEventListener("click", async (e) => {
+      e.preventDefault();
+      const text = el.getAttribute("data-copy");
+      if (!text) return;
+      const label = el.textContent;
+      try {
+        await navigator.clipboard.writeText(text);
+        el.textContent = "Copied!";
+      } catch {
+        window.prompt("Copy Discord username:", text);
+        return;
+      }
+      window.setTimeout(() => {
+        el.textContent = label;
+      }, 1400);
+    });
+  });
 })();

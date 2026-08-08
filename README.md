@@ -1,52 +1,48 @@
-# Shree — Creative Frontend Portfolio
+# Shree.
 
-Personal portfolio for **Shree** — a creative frontend developer focused on expressive interfaces, clear hierarchy, and motion that feels intentional.
+Creative frontend portfolio — dark, ice-blue, and built to feel sharp on first load.
 
-**Live site:** [shreesoni.vercel.app](https://shreesoni.vercel.app)
-
----
-
-## Overview
-
-A dark, ice-blue portfolio built with plain HTML, CSS, and JavaScript. No framework bloat — just sharp structure, custom interaction, and performance-minded motion.
-
-Designed to feel like a product, not a template: lightweight ASCII hover motion, signal-line scramble effects, and a toolkit marquee that stays smooth on scroll.
+**Live:** [shreesoni.vercel.app](https://shreesoni.vercel.app)
 
 ---
 
-## Features
+## About
 
-- **ASCII spotlight** — soft cursor-follow cloud on the hero (performance-minded)
-- **Signal lines** — scramble text on hover/focus
-- **Work showcase** — live projects with clean previews
-- **Process section** — scroll-aware step highlights
-- **Toolkit marquee** — dual-direction tech chips
+I’m Shree — a frontend developer who builds clean, expressive sites with presence, not noise. This repo is my personal site: plain HTML, CSS, and JavaScript, shipped on Vercel.
+
+---
+
+## Highlights
+
+- **Lenis smooth scroll** — buttery page glide (respects reduced motion)
+- **ASCII spotlight** — soft cursor-follow cloud on the hero; fades after idle
+- **Signal lines** — scramble / decode text on hover and focus
+- **Work** — live projects: Portfolio, Extract, and more on GitHub
+- **Process + stack** — scroll-aware steps and a dual-direction toolkit marquee
 - **Live stats** — public repo count from GitHub + live sites linked on the page
-- **Responsive layout** — desktop polish, mobile nav, reduced-motion support
+- **Responsive** — desktop polish, mobile nav, `prefers-reduced-motion` support
 
 ---
 
-## Tech stack
+## Stack
 
 | Layer | Tools |
 | --- | --- |
 | Markup | HTML5 |
 | Style | CSS3 (custom properties, grid/flex, keyframes) |
-| Motion | Vanilla JavaScript (`requestAnimationFrame`, Intersection Observer) |
+| Motion | Vanilla JS + [Lenis](https://github.com/darkroomengineering/lenis) |
 | Fonts | [Bricolage Grotesque](https://fonts.google.com/specimen/Bricolage+Grotesque), [Sora](https://fonts.google.com/specimen/Sora), [IBM Plex Mono](https://fonts.google.com/specimen/IBM+Plex+Mono) |
 | Deploy | [Vercel](https://vercel.com) |
 
 ---
 
-## Project structure
+## Structure
 
 ```text
 MyPortfolio/
-├── index.html          # Page structure & content
-├── css/
-│   └── styles.css      # Design system, layout, motion
-├── js/
-│   └── main.js         # Cursor, ASCII, reveals, stats, interactions
+├── index.html
+├── css/styles.css
+├── js/main.js
 ├── assets/
 │   ├── favicon.png
 │   ├── favicon-32.png
@@ -56,25 +52,21 @@ MyPortfolio/
 └── README.md
 ```
 
+No build step. Static files only.
+
 ---
 
-## Getting started
-
-No build step required.
+## Run locally
 
 ```bash
-# clone
 git clone https://github.com/Shreesoni520/MyPortfolio.git
 cd MyPortfolio
-
-# open locally (any static server works)
-# example with Python:
 python -m http.server 5500
 ```
 
-Then visit `http://localhost:5500`.
+Open [http://localhost:5500](http://localhost:5500).
 
-Or open `index.html` directly in a browser (some features prefer a local server).
+You can also open `index.html` directly; a local server is better for fetch-based stats.
 
 ---
 
@@ -82,18 +74,18 @@ Or open `index.html` directly in a browser (some features prefer a local server)
 
 | Project | Link |
 | --- | --- |
-| This Portfolio | [shreesoni.vercel.app](https://shreesoni.vercel.app) |
+| Portfolio | [shreesoni.vercel.app](https://shreesoni.vercel.app) |
 | Extract | [shrees-extractions.vercel.app](https://shrees-extractions.vercel.app) |
-| More on GitHub | [github.com/Shreesoni520](https://github.com/Shreesoni520) |
+| More | [github.com/Shreesoni520](https://github.com/Shreesoni520) |
 
 ---
 
-## Design notes
+## Design
 
-- Accent: ice blue (`#8ec5ff`) on near-black
-- Display type for brand moments; Sora for UI; Mono for signal/ASCII
-- Motion respects `prefers-reduced-motion`
-- ASCII fields pause when idle and clear when the pointer leaves
+- Accent `#8ec5ff` on near-black `#070708`
+- Display type for brand moments; Sora for UI; mono for signal/ASCII
+- Motion pauses / simplifies with `prefers-reduced-motion`
+- Hero ASCII follows the pointer and clears when idle or on leave
 
 ---
 
@@ -103,13 +95,12 @@ Or open `index.html` directly in a browser (some features prefer a local server)
 - **GitHub:** [Shreesoni520](https://github.com/Shreesoni520)
 - **X:** [@Shreessoni520](https://x.com/Shreessoni520)
 - **Instagram:** [krishna_soni.52](https://www.instagram.com/krishna_soni.52/)
+- **Discord:** `shree_soni520` (copy from the live site contact row)
 
 ---
 
 ## License
 
-This portfolio is personal work. Feel free to explore the code for learning — please don’t copy it wholesale as your own site.
-
----
+Personal work. Explore the code to learn — please don’t copy the site wholesale as your own.
 
 Built with intention by **Shree**.
