@@ -1,0 +1,4 @@
+_tmp_*
+.git
+.env*
+*.log

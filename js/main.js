@@ -1,4 +1,5 @@
 import Lenis from "https://cdn.jsdelivr.net/npm/lenis@1.3.25/+esm";
+import { createAsciiMatrix } from "./ascii-matrix.js?v=20260809i";
 
 (() => {
   const body = document.body;
@@ -437,185 +438,13 @@ import Lenis from "https://cdn.jsdelivr.net/npm/lenis@1.3.25/+esm";
     { passive: true }
   );
 
-  // ASCII spotlight — follows cursor; fades away after 10s idle
-  (() => {
-    const canvas = document.querySelector('[data-ascii="hero"]');
-    if (!canvas) return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    if (window.matchMedia("(hover: none), (pointer: coarse)").matches) return;
-
-    const RAMP = ".:;+*%#";
-    const CELL = 18;
-    const RADIUS = 6;
-    const IDLE_MS = 10000; // stay still this long → ASCII disappears
-    const zone = canvas.closest(".hero") || canvas.parentElement;
-    const ctx = canvas.getContext("2d", { alpha: true, desynchronized: true });
-    if (!zone || !ctx) return;
-
-    let width = 0;
-    let height = 0;
-    let cols = 0;
-    let rows = 0;
-    let mx = 0;
-    let my = 0;
-    let tx = 0;
-    let ty = 0;
-    let hover = false;
-    let presence = 0;
-    let raf = 0;
-    let lastDraw = 0;
-    let lastMove = 0;
-
-    const resize = () => {
-      const rect = zone.getBoundingClientRect();
-      width = Math.max(1, Math.round(rect.width) || 320);
-      height = Math.max(1, Math.round(rect.height) || 240);
-      cols = Math.ceil(width / CELL) + 1;
-      rows = Math.ceil(height / CELL) + 1;
-      canvas.width = width;
-      canvas.height = height;
-      canvas.style.width = `${width}px`;
-      canvas.style.height = `${height}px`;
-      ctx.clearRect(0, 0, width, height);
-    };
-
-    const draw = (now) => {
-      raf = 0;
-      // Mouse still for 10s → treat as inactive and fade out
-      const active = hover && now - lastMove < IDLE_MS;
-      presence += ((active ? 1 : 0) - presence) * (active ? 0.2 : 0.08);
-      mx += (tx - mx) * 0.28;
-      my += (ty - my) * 0.28;
-
-      if (presence < 0.02) {
-        ctx.clearRect(0, 0, width, height);
-        presence = 0;
-        // Keep a light tick while hovering so idle timeout can still fire
-        if (hover) raf = requestAnimationFrame(draw);
-        return;
-      }
-
-      // Cap ~30fps while visible
-      if (now - lastDraw < 32) {
-        raf = requestAnimationFrame(draw);
-        return;
-      }
-      lastDraw = now;
-
-      const spotR = RADIUS * CELL;
-      const spotR2 = spotR * spotR;
-      const c0 = Math.max(0, ((mx - spotR) / CELL) | 0);
-      const c1 = Math.min(cols - 1, Math.ceil((mx + spotR) / CELL));
-      const r0 = Math.max(0, ((my - spotR) / CELL) | 0);
-      const r1 = Math.min(rows - 1, Math.ceil((my + spotR) / CELL));
-
-      ctx.clearRect(0, 0, width, height);
-      ctx.font = `500 ${CELL - 4}px "IBM Plex Mono", ui-monospace, monospace`;
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillStyle = "#cee0ff";
-
-      for (let r = r0; r <= r1; r += 1) {
-        for (let c = c0; c <= c1; c += 1) {
-          const x = c * CELL + CELL * 0.5;
-          const y = r * CELL + CELL * 0.5;
-          const dx = x - mx;
-          const dy = y - my;
-          // Irregular blotch (not a perfect circle/ring)
-          const d2 = dx * dx * 0.85 + dy * dy * 1.2;
-          if (d2 > spotR2) continue;
-
-          const fall = 1 - Math.sqrt(d2) / spotR;
-          let n = fall * fall * presence;
-
-          const bx = x / width - 0.28;
-          const by = y / height - 0.48;
-          const hole = Math.max(0, 1 - Math.sqrt(bx * bx + by * by) / 0.22);
-          n *= 1 - hole * hole * 0.6;
-          if (n < 0.08) continue;
-
-          const idx = Math.min(RAMP.length - 1, (n * RAMP.length) | 0);
-          ctx.globalAlpha = (0.16 + n * 0.55) * presence;
-          ctx.fillText(RAMP[idx], x, y);
-        }
-      }
-      ctx.globalAlpha = 1;
-
-      if (hover || presence > 0.02) raf = requestAnimationFrame(draw);
-    };
-
-    const kick = () => {
-      if (!raf) raf = requestAnimationFrame(draw);
-    };
-
-    const toLocal = (e) => {
-      const rect = canvas.getBoundingClientRect();
-      if (rect.width < 1 || rect.height < 1) return null;
-      return {
-        x: ((e.clientX - rect.left) / rect.width) * width,
-        y: ((e.clientY - rect.top) / rect.height) * height,
-      };
-    };
-
-    resize();
-    let resizeTimer = 0;
-    window.addEventListener(
-      "resize",
-      () => {
-        clearTimeout(resizeTimer);
-        resizeTimer = setTimeout(resize, 150);
-      },
-      { passive: true }
-    );
-
-    window.addEventListener(
-      "scroll",
-      () => {
-        hover = false;
-        presence = 0;
-        lastMove = 0;
-        if (raf) {
-          cancelAnimationFrame(raf);
-          raf = 0;
-        }
-        ctx.clearRect(0, 0, width, height);
-      },
-      { passive: true }
-    );
-
-    zone.addEventListener(
-      "pointermove",
-      (e) => {
-        const p = toLocal(e);
-        if (!p) return;
-        hover = true;
-        lastMove = performance.now();
-        tx = p.x;
-        ty = p.y;
-        kick();
-      },
-      { passive: true }
-    );
-
-    zone.addEventListener(
-      "pointerleave",
-      () => {
-        hover = false;
-        kick();
-      },
-      { passive: true }
-    );
-
-    document.addEventListener("visibilitychange", () => {
-      if (!document.hidden) return;
-      hover = false;
-      presence = 0;
-      lastMove = 0;
-      cancelAnimationFrame(raf);
-      raf = 0;
-      ctx.clearRect(0, 0, width, height);
+  // Full-site + grid; cursor glitch only in the hero section
+  const matrixCanvas = document.getElementById("ascii-matrix");
+  if (matrixCanvas) {
+    createAsciiMatrix(matrixCanvas, {
+      interactiveZone: document.querySelector(".hero"),
     });
-  })();
+  }
 
   // Copy Discord username (no public profile URL without numeric ID)
   document.querySelectorAll("[data-copy]").forEach((el) => {
