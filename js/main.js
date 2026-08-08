@@ -399,252 +399,183 @@
     { passive: true }
   );
 
-  // Hero ASCII motion — flowing field like ascii-motion.com (ice-blue, light)
+  // ASCII spotlight — follows cursor; fades away after 10s idle
   (() => {
     const canvas = document.querySelector('[data-ascii="hero"]');
     if (!canvas) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (window.matchMedia("(hover: none), (pointer: coarse)").matches) return;
 
-    const RAMP = " .,:;+*#";
-    const IDLE_MS = 10000;
-    const FRAME_MS = 1000 / 20;
-    const MAX_CELLS = 1500;
+    const RAMP = ".:;+*%#";
+    const CELL = 18;
+    const RADIUS = 6;
+    const IDLE_MS = 10000; // stay still this long → ASCII disappears
     const zone = canvas.closest(".hero") || canvas.parentElement;
     const ctx = canvas.getContext("2d", { alpha: true, desynchronized: true });
     if (!zone || !ctx) return;
-
-    const coarse = window.matchMedia("(hover: none), (pointer: coarse)").matches;
-
-    const hash = (x, y) => {
-      const s = Math.sin(x * 127.1 + y * 311.7) * 43758.5453;
-      return s - Math.floor(s);
-    };
-
-    const noise = (x, y) => {
-      const xi = x | 0;
-      const yi = y | 0;
-      const xf = x - xi;
-      const yf = y - yi;
-      const u = xf * xf * (3 - 2 * xf);
-      const v = yf * yf * (3 - 2 * yf);
-      const a = hash(xi, yi);
-      const b = hash(xi + 1, yi);
-      const c = hash(xi, yi + 1);
-      const d = hash(xi + 1, yi + 1);
-      return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
-    };
 
     let width = 0;
     let height = 0;
     let cols = 0;
     let rows = 0;
-    let cell = 20;
-    let mx = 0.62;
-    let my = 0.38;
-    let tx = 0.62;
-    let ty = 0.38;
+    let mx = 0;
+    let my = 0;
+    let tx = 0;
+    let ty = 0;
     let hover = false;
-    let bloom = 0;
-    let visible = false;
+    let presence = 0;
     let raf = 0;
     let lastDraw = 0;
     let lastMove = 0;
-    let t0 = performance.now();
 
     const resize = () => {
       const rect = zone.getBoundingClientRect();
       width = Math.max(1, Math.round(rect.width) || 320);
       height = Math.max(1, Math.round(rect.height) || 240);
-      cell = width * height > 1_100_000 ? 22 : 18;
-      cols = Math.ceil(width / cell) + 1;
-      rows = Math.ceil(height / cell) + 1;
-      while (cols * rows > MAX_CELLS && cell < 28) {
-        cell += 1;
-        cols = Math.ceil(width / cell) + 1;
-        rows = Math.ceil(height / cell) + 1;
-      }
+      cols = Math.ceil(width / CELL) + 1;
+      rows = Math.ceil(height / CELL) + 1;
       canvas.width = width;
       canvas.height = height;
       canvas.style.width = `${width}px`;
       canvas.style.height = `${height}px`;
+      ctx.clearRect(0, 0, width, height);
     };
 
     const draw = (now) => {
       raf = 0;
-      if (!visible) {
+      // Mouse still for 10s → treat as inactive and fade out
+      const active = hover && now - lastMove < IDLE_MS;
+      presence += ((active ? 1 : 0) - presence) * (active ? 0.2 : 0.08);
+      mx += (tx - mx) * 0.28;
+      my += (ty - my) * 0.28;
+
+      if (presence < 0.02) {
         ctx.clearRect(0, 0, width, height);
+        presence = 0;
+        // Keep a light tick while hovering so idle timeout can still fire
+        if (hover) raf = requestAnimationFrame(draw);
         return;
       }
 
-      if (now - lastDraw < FRAME_MS) {
+      // Cap ~30fps while visible
+      if (now - lastDraw < 32) {
         raf = requestAnimationFrame(draw);
         return;
       }
       lastDraw = now;
 
-      const idle = !hover || now - lastMove > IDLE_MS || coarse;
-      const wantBloom = !idle;
-      bloom += ((wantBloom ? 1 : 0) - bloom) * (wantBloom ? 0.12 : 0.05);
-      mx += (tx - mx) * (wantBloom ? 0.1 : 0.02);
-      my += (ty - my) * (wantBloom ? 0.1 : 0.02);
-
-      // Motion slows when idle (calm field), faster when moving
-      const speed = wantBloom ? 1 : 0.35;
-      const t = (now - t0) * 0.001 * speed;
-      const px = mx * width;
-      const py = my * height;
-      const spotR = Math.min(width, height) * 0.3;
+      const spotR = RADIUS * CELL;
       const spotR2 = spotR * spotR;
+      const c0 = Math.max(0, ((mx - spotR) / CELL) | 0);
+      const c1 = Math.min(cols - 1, Math.ceil((mx + spotR) / CELL));
+      const r0 = Math.max(0, ((my - spotR) / CELL) | 0);
+      const r1 = Math.min(rows - 1, Math.ceil((my + spotR) / CELL));
 
       ctx.clearRect(0, 0, width, height);
-      ctx.font = `500 ${Math.max(10, cell - 5)}px "IBM Plex Mono", ui-monospace, monospace`;
+      ctx.font = `500 ${CELL - 4}px "IBM Plex Mono", ui-monospace, monospace`;
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      ctx.fillStyle = "#b7d2f7";
+      ctx.fillStyle = "#cee0ff";
 
-      for (let r = 0; r < rows; r += 1) {
-        for (let c = 0; c < cols; c += 1) {
-          const x = c * cell + cell * 0.5;
-          const y = r * cell + cell * 0.5;
+      for (let r = r0; r <= r1; r += 1) {
+        for (let c = c0; c <= c1; c += 1) {
+          const x = c * CELL + CELL * 0.5;
+          const y = r * CELL + CELL * 0.5;
+          const dx = x - mx;
+          const dy = y - my;
+          // Irregular blotch (not a perfect circle/ring)
+          const d2 = dx * dx * 0.85 + dy * dy * 1.2;
+          if (d2 > spotR2) continue;
 
-          // Flowing procedural motion (the ascii-motion feel)
-          let n =
-            noise(c * 0.08 + t * 0.16, r * 0.07 - t * 0.12) * 0.55 +
-            noise(c * 0.03 - t * 0.05, r * 0.04 + t * 0.04) * 0.35;
+          const fall = 1 - Math.sqrt(d2) / spotR;
+          let n = fall * fall * presence;
 
-          // Soft clusters of denser glyphs drifting through the field
-          const cluster = noise(c * 0.045 + t * 0.07, r * 0.05 - t * 0.06);
-          if (cluster > 0.62) n += (cluster - 0.62) * 0.9;
-
-          // Cursor bloom
-          if (bloom > 0.02) {
-            const dx = x - px;
-            const dy = y - py;
-            const d2 = dx * dx * 0.88 + dy * dy * 1.12;
-            if (d2 < spotR2) {
-              const fall = 1 - Math.sqrt(d2) / spotR;
-              n += fall * fall * 0.75 * bloom;
-            }
-          }
-
-          // Keep "Shree" readable
           const bx = x / width - 0.28;
           const by = y / height - 0.48;
-          const hole = Math.max(0, 1 - Math.sqrt(bx * bx + by * by) / 0.25);
-          n *= 1 - hole * hole * 0.72;
+          const hole = Math.max(0, 1 - Math.sqrt(bx * bx + by * by) / 0.22);
+          n *= 1 - hole * hole * 0.6;
+          if (n < 0.08) continue;
 
-          // Base faint grid of dots
-          if (n < 0.18) {
-            if (((c + r) & 3) !== 0) continue;
-            ctx.globalAlpha = 0.045 + n * 0.08;
-            ctx.fillText(".", x, y);
-            continue;
-          }
-
-          if (n < 0.28 && ((c + r) & 1) === 1) continue;
-
-          const idx = Math.min(RAMP.length - 1, (n * (RAMP.length - 0.001)) | 0);
-          const ch = RAMP[idx];
-          if (ch === " ") continue;
-          ctx.globalAlpha = 0.09 + n * 0.4;
-          ctx.fillText(ch, x, y);
+          const idx = Math.min(RAMP.length - 1, (n * RAMP.length) | 0);
+          ctx.globalAlpha = (0.16 + n * 0.55) * presence;
+          ctx.fillText(RAMP[idx], x, y);
         }
       }
-
       ctx.globalAlpha = 1;
-      raf = requestAnimationFrame(draw);
+
+      if (hover || presence > 0.02) raf = requestAnimationFrame(draw);
     };
 
     const kick = () => {
-      if (!raf && visible) raf = requestAnimationFrame(draw);
+      if (!raf) raf = requestAnimationFrame(draw);
     };
 
-    const toNorm = (e) => {
-      const rect = zone.getBoundingClientRect();
+    const toLocal = (e) => {
+      const rect = canvas.getBoundingClientRect();
       if (rect.width < 1 || rect.height < 1) return null;
       return {
-        x: Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width)),
-        y: Math.min(1, Math.max(0, (e.clientY - rect.top) / rect.height)),
+        x: ((e.clientX - rect.left) / rect.width) * width,
+        y: ((e.clientY - rect.top) / rect.height) * height,
       };
     };
 
     resize();
-
-    const io = new IntersectionObserver(
-      ([entry]) => {
-        visible = !!entry?.isIntersecting;
-        if (visible) {
-          t0 = performance.now() - 800;
-          kick();
-        } else {
-          cancelAnimationFrame(raf);
-          raf = 0;
-          ctx.clearRect(0, 0, width, height);
-        }
-      },
-      { threshold: 0.08 }
-    );
-    io.observe(zone);
-
     let resizeTimer = 0;
     window.addEventListener(
       "resize",
       () => {
         clearTimeout(resizeTimer);
-        resizeTimer = setTimeout(() => {
-          resize();
-          kick();
-        }, 150);
+        resizeTimer = setTimeout(resize, 150);
       },
       { passive: true }
     );
 
-    if (!coarse) {
-      zone.addEventListener(
-        "pointerenter",
-        (e) => {
-          hover = true;
-          lastMove = performance.now();
-          const p = toNorm(e);
-          if (p) {
-            tx = p.x;
-            ty = p.y;
-          }
-          kick();
-        },
-        { passive: true }
-      );
-      zone.addEventListener(
-        "pointermove",
-        (e) => {
-          hover = true;
-          lastMove = performance.now();
-          const p = toNorm(e);
-          if (!p) return;
-          tx = p.x;
-          ty = p.y;
-          kick();
-        },
-        { passive: true }
-      );
-      zone.addEventListener(
-        "pointerleave",
-        () => {
-          hover = false;
-          kick();
-        },
-        { passive: true }
-      );
-    }
+    window.addEventListener(
+      "scroll",
+      () => {
+        hover = false;
+        presence = 0;
+        lastMove = 0;
+        if (raf) {
+          cancelAnimationFrame(raf);
+          raf = 0;
+        }
+        ctx.clearRect(0, 0, width, height);
+      },
+      { passive: true }
+    );
+
+    zone.addEventListener(
+      "pointermove",
+      (e) => {
+        const p = toLocal(e);
+        if (!p) return;
+        hover = true;
+        lastMove = performance.now();
+        tx = p.x;
+        ty = p.y;
+        kick();
+      },
+      { passive: true }
+    );
+
+    zone.addEventListener(
+      "pointerleave",
+      () => {
+        hover = false;
+        kick();
+      },
+      { passive: true }
+    );
 
     document.addEventListener("visibilitychange", () => {
-      if (document.hidden) {
-        cancelAnimationFrame(raf);
-        raf = 0;
-        ctx.clearRect(0, 0, width, height);
-      } else if (visible) {
-        kick();
-      }
+      if (!document.hidden) return;
+      hover = false;
+      presence = 0;
+      lastMove = 0;
+      cancelAnimationFrame(raf);
+      raf = 0;
+      ctx.clearRect(0, 0, width, height);
     });
   })();
 })();
