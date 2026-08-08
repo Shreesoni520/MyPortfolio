@@ -1,6 +1,9 @@
+import Lenis from "https://cdn.jsdelivr.net/npm/lenis@1.3.25/+esm";
+
 (() => {
   const body = document.body;
   body.classList.add("is-loading");
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   const year = document.getElementById("year");
   if (year) year.textContent = String(new Date().getFullYear());
@@ -20,50 +23,64 @@
     }
   });
 
-  // Top scroll progress — only after loader (keeps load lines in sync)
+  // Lenis smooth scroll (same feel as premium portfolios like jigneshis)
+  let lenis = null;
+  if (!reduceMotion) {
+    lenis = new Lenis({
+      duration: 1.2,
+      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      smoothWheel: true,
+      syncTouch: false,
+      touchMultiplier: 1.4,
+      wheelMultiplier: 1,
+    });
+    lenis.stop();
+    const lenisLoop = (time) => {
+      lenis.raf(time);
+      requestAnimationFrame(lenisLoop);
+    };
+    requestAnimationFrame(lenisLoop);
+    window.__lenis = lenis;
+  }
+
+  // Top scroll progress — driven by Lenis when available
   const progressBar = document.querySelector(".scroll-progress i");
-  let progressTarget = 0;
-  let progressCurrent = 0;
-  let progressTicking = false;
   let scrollTracking = false;
 
   const readProgress = () => {
     if (!scrollTracking || !progressBar) return;
-    const doc = document.documentElement;
-    const scrollTop = doc.scrollTop || document.body.scrollTop;
-    const height = doc.scrollHeight - doc.clientHeight;
-    progressTarget = height > 0 ? scrollTop / height : 0;
-    if (!progressTicking) {
-      progressTicking = true;
-      requestAnimationFrame(smoothProgress);
-    }
+    const scrollTop = lenis
+      ? lenis.scroll
+      : document.documentElement.scrollTop || document.body.scrollTop;
+    const limit = lenis
+      ? lenis.limit
+      : document.documentElement.scrollHeight - document.documentElement.clientHeight;
+    const p = limit > 0 ? scrollTop / limit : 0;
+    progressBar.style.transform = `scaleX(${Math.min(1, Math.max(0, p))})`;
   };
 
-  const smoothProgress = () => {
-    if (!progressBar) return;
-    progressCurrent += (progressTarget - progressCurrent) * 0.12;
-    if (Math.abs(progressTarget - progressCurrent) < 0.001) {
-      progressCurrent = progressTarget;
-      progressTicking = false;
-    } else {
-      requestAnimationFrame(smoothProgress);
-    }
-    progressBar.style.transform = `scaleX(${Math.min(1, Math.max(0, progressCurrent))})`;
-  };
-
-  window.addEventListener("scroll", readProgress, { passive: true });
+  if (lenis) lenis.on("scroll", readProgress);
+  else window.addEventListener("scroll", readProgress, { passive: true });
   window.addEventListener("resize", readProgress);
 
   // Loader then hero entrance — finish when shared lineFill ends (1.6s)
-  const finishLoader = () => {
-    document.querySelector(".loader")?.classList.add("is-done");
+  let loaderDone = false;
+  const unlockScroll = () => {
     body.classList.remove("is-loading");
+    body.style.overflow = "";
+    document.documentElement.style.overflow = "";
+    lenis?.start();
+  };
+
+  const finishLoader = () => {
+    if (loaderDone) return;
+    loaderDone = true;
+    document.querySelector(".loader")?.classList.add("is-done");
+    unlockScroll();
     body.classList.add("is-ready");
     /* Hand top line over to scroll tracking from 0 */
     if (progressBar) {
       progressBar.style.animation = "none";
-      progressCurrent = 0;
-      progressTarget = 0;
       progressBar.style.transform = "scaleX(0)";
     }
     scrollTracking = true;
@@ -73,6 +90,8 @@
   const startLoad = () => setTimeout(finishLoader, 1650);
   window.addEventListener("load", startLoad);
   if (document.readyState === "complete") startLoad();
+  // Safety: never leave the page stuck non-scrollable
+  setTimeout(finishLoader, 2800);
 
   // Split brand letters
   document.querySelectorAll("[data-split]").forEach((el) => {
@@ -102,7 +121,7 @@
   const revealTargets = document.querySelectorAll(revealGroups.join(", "));
   revealTargets.forEach((el, i) => {
     el.classList.add("reveal-up");
-    el.style.setProperty("--delay", `${(i % 5) * 120}ms`);
+    el.style.setProperty("--delay", `${(i % 6) * 90}ms`);
   });
 
   const io = new IntersectionObserver(
@@ -179,7 +198,7 @@
     line.addEventListener("focus", run);
   });
 
-  // Slightly softer anchor scrolling feel
+  // Anchor scrolling through Lenis for the same buttered glide
   document.querySelectorAll('a[href^="#"]').forEach((link) => {
     link.addEventListener("click", (e) => {
       const id = link.getAttribute("href");
@@ -187,7 +206,11 @@
       const target = document.querySelector(id);
       if (!target) return;
       e.preventDefault();
-      target.scrollIntoView({ behavior: "smooth", block: "start" });
+      if (lenis) {
+        lenis.scrollTo(target, { offset: -8, duration: 1.35 });
+      } else {
+        target.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
+      }
     });
   });
 
@@ -377,6 +400,7 @@
     toggle?.setAttribute("aria-expanded", "false");
     if (mobileNav) mobileNav.hidden = true;
     document.body.style.overflow = "";
+    if (loaderDone) lenis?.start();
   };
 
   toggle?.addEventListener("click", () => {
@@ -384,306 +408,232 @@
     toggle.setAttribute("aria-expanded", String(!open));
     if (mobileNav) mobileNav.hidden = open;
     document.body.style.overflow = open ? "" : "hidden";
+    if (open) {
+      if (loaderDone) lenis?.start();
+    } else {
+      lenis?.stop();
+    }
   });
 
   mobileNav?.querySelectorAll("a").forEach((a) => a.addEventListener("click", closeNav));
 
-  // Soft parallax on hero ring
+  // Soft parallax on hero ring (throttled)
   const heroRing = document.querySelector(".hero-ring");
+  let ringRaf = 0;
+  let ringX = 0;
+  let ringY = 0;
   window.addEventListener(
     "pointermove",
     (e) => {
       if (!heroRing) return;
-      const x = (e.clientX / window.innerWidth - 0.5) * 30;
-      const y = (e.clientY / window.innerHeight - 0.5) * 20;
-      heroRing.style.translate = `${x}px ${y}px`;
+      ringX = (e.clientX / window.innerWidth - 0.5) * 24;
+      ringY = (e.clientY / window.innerHeight - 0.5) * 16;
+      if (ringRaf) return;
+      ringRaf = requestAnimationFrame(() => {
+        ringRaf = 0;
+        heroRing.style.translate = `${ringX}px ${ringY}px`;
+      });
     },
     { passive: true }
   );
 
-
-  // ASCII trail (cool.mp4) — paints where the cursor has been; fades after idle
+  // ASCII spotlight — follows cursor; fades away after 10s idle
   (() => {
-    const canvases = [...document.querySelectorAll("[data-ascii]")];
-    if (!canvases.length) return;
+    const canvas = document.querySelector('[data-ascii="hero"]');
+    if (!canvas) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (window.matchMedia("(hover: none), (pointer: coarse)").matches) return;
 
-    const CELL = 14;
-    const BRUSH = 1.65; // thin path — not a ring around the cursor
-    const IDLE_MS = 10000; // stop & disappear after 10s without move
-    const FADE_PER_FRAME = 0.015; // soft dissolve once idle / leaving
+    const RAMP = ".:;+*%#";
+    const CELL = 18;
+    const RADIUS = 6;
+    const IDLE_MS = 10000; // stay still this long → ASCII disappears
+    const zone = canvas.closest(".hero") || canvas.parentElement;
+    const ctx = canvas.getContext("2d", { alpha: true, desynchronized: true });
+    if (!zone || !ctx) return;
 
-    const fields = canvases
-      .map((canvas) => {
-        const host = canvas.parentElement;
-        const ctx = canvas.getContext("2d", { alpha: true, desynchronized: true });
-        if (!host || !ctx) return null;
-        const mode = canvas.getAttribute("data-ascii") || "hero";
-        const zone = canvas.closest(".hero, #about, .about") || host;
-        return {
-          canvas,
-          host,
-          zone,
-          ctx,
-          mode,
-          width: 0,
-          height: 0,
-          cols: 0,
-          rows: 0,
-          grid: null,
-          hover: false,
-          active: false,
-          hasInk: false,
-          lastCol: -1,
-          lastRow: -1,
-          lastMove: 0,
-          fading: false,
-        };
-      })
-      .filter(Boolean);
+    let width = 0;
+    let height = 0;
+    let cols = 0;
+    let rows = 0;
+    let mx = 0;
+    let my = 0;
+    let tx = 0;
+    let ty = 0;
+    let hover = false;
+    let presence = 0;
+    let raf = 0;
+    let lastDraw = 0;
+    let lastMove = 0;
 
-    const resetGrid = (field) => {
-      field.grid = new Float32Array(field.cols * field.rows);
-      field.hasInk = false;
-      field.lastCol = -1;
-      field.lastRow = -1;
-      field.fading = false;
+    const resize = () => {
+      const rect = zone.getBoundingClientRect();
+      width = Math.max(1, Math.round(rect.width) || 320);
+      height = Math.max(1, Math.round(rect.height) || 240);
+      cols = Math.ceil(width / CELL) + 1;
+      rows = Math.ceil(height / CELL) + 1;
+      canvas.width = width;
+      canvas.height = height;
+      canvas.style.width = `${width}px`;
+      canvas.style.height = `${height}px`;
+      ctx.clearRect(0, 0, width, height);
     };
 
-    const clearField = (field) => {
-      field.ctx.clearRect(0, 0, field.width || field.canvas.width, field.height || field.canvas.height);
-      if (field.grid) field.grid.fill(0);
-      field.hasInk = false;
-      field.lastCol = -1;
-      field.lastRow = -1;
-      field.fading = false;
-    };
+    const draw = (now) => {
+      raf = 0;
+      // Mouse still for 10s → treat as inactive and fade out
+      const active = hover && now - lastMove < IDLE_MS;
+      presence += ((active ? 1 : 0) - presence) * (active ? 0.2 : 0.08);
+      mx += (tx - mx) * 0.28;
+      my += (ty - my) * 0.28;
 
-    const resizeField = (field) => {
-      const rect = field.canvas.getBoundingClientRect();
-      field.width = Math.max(1, Math.round(rect.width) || field.zone.clientWidth || 320);
-      field.height = Math.max(1, Math.round(rect.height) || field.zone.clientHeight || 240);
-      if (field.canvas.width !== field.width) field.canvas.width = field.width;
-      if (field.canvas.height !== field.height) field.canvas.height = field.height;
-      field.ctx.setTransform(1, 0, 0, 1, 0, 0);
-      field.cols = Math.ceil(field.width / CELL) + 1;
-      field.rows = Math.ceil(field.height / CELL) + 1;
-      resetGrid(field);
-      field.ctx.clearRect(0, 0, field.width, field.height);
-    };
+      if (presence < 0.02) {
+        ctx.clearRect(0, 0, width, height);
+        presence = 0;
+        // Keep a light tick while hovering so idle timeout can still fire
+        if (hover) raf = requestAnimationFrame(draw);
+        return;
+      }
 
-    const pointerToCanvas = (field, e) => {
-      const rect = field.canvas.getBoundingClientRect();
-      if (rect.width < 1 || rect.height < 1) return null;
-      return {
-        x: ((e.clientX - rect.left) / rect.width) * field.width,
-        y: ((e.clientY - rect.top) / rect.height) * field.height,
-      };
-    };
+      // Cap ~30fps while visible
+      if (now - lastDraw < 32) {
+        raf = requestAnimationFrame(draw);
+        return;
+      }
+      lastDraw = now;
 
-    // Soft cool.mp4 dab — only the path cells, not a big surround
-    const stamp = (field, px, py) => {
-      const col = px / CELL;
-      const row = py / CELL;
-      const c0 = Math.max(0, Math.floor(col - BRUSH));
-      const c1 = Math.min(field.cols - 1, Math.ceil(col + BRUSH));
-      const r0 = Math.max(0, Math.floor(row - BRUSH));
-      const r1 = Math.min(field.rows - 1, Math.ceil(row + BRUSH));
-      const hero = field.mode === "hero";
+      const spotR = RADIUS * CELL;
+      const spotR2 = spotR * spotR;
+      const c0 = Math.max(0, ((mx - spotR) / CELL) | 0);
+      const c1 = Math.min(cols - 1, Math.ceil((mx + spotR) / CELL));
+      const r0 = Math.max(0, ((my - spotR) / CELL) | 0);
+      const r1 = Math.min(rows - 1, Math.ceil((my + spotR) / CELL));
+
+      ctx.clearRect(0, 0, width, height);
+      ctx.font = `500 ${CELL - 4}px "IBM Plex Mono", ui-monospace, monospace`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillStyle = "#cee0ff";
 
       for (let r = r0; r <= r1; r += 1) {
         for (let c = c0; c <= c1; c += 1) {
-          const dx = c + 0.5 - col;
-          const dy = r + 0.5 - row;
-          const d = Math.sqrt(dx * dx + dy * dy);
-          if (d > BRUSH) continue;
-          const fall = 1 - d / BRUSH;
-          let ink = 0.35 + fall * fall * 0.65;
+          const x = c * CELL + CELL * 0.5;
+          const y = r * CELL + CELL * 0.5;
+          const dx = x - mx;
+          const dy = y - my;
+          // Irregular blotch (not a perfect circle/ring)
+          const d2 = dx * dx * 0.85 + dy * dy * 1.2;
+          if (d2 > spotR2) continue;
 
-          if (hero) {
-            const x = (c + 0.5) * CELL;
-            const y = (r + 0.5) * CELL;
-            const bx = x / field.width - 0.28;
-            const by = y / field.height - 0.48;
-            const hole = Math.max(0, 1 - Math.sqrt(bx * bx + by * by) / 0.2);
-            ink *= 1 - hole * hole * 0.55;
-          }
+          const fall = 1 - Math.sqrt(d2) / spotR;
+          let n = fall * fall * presence;
 
-          const i = r * field.cols + c;
-          if (ink > field.grid[i]) {
-            field.grid[i] = ink;
-            field.hasInk = true;
-          }
+          const bx = x / width - 0.28;
+          const by = y / height - 0.48;
+          const hole = Math.max(0, 1 - Math.sqrt(bx * bx + by * by) / 0.22);
+          n *= 1 - hole * hole * 0.6;
+          if (n < 0.08) continue;
+
+          const idx = Math.min(RAMP.length - 1, (n * RAMP.length) | 0);
+          ctx.globalAlpha = (0.16 + n * 0.55) * presence;
+          ctx.fillText(RAMP[idx], x, y);
         }
       }
-    };
+      ctx.globalAlpha = 1;
 
-    const paintPath = (field, x, y) => {
-      const col = x / CELL;
-      const row = y / CELL;
-      if (field.lastCol < 0) {
-        stamp(field, x, y);
-      } else {
-        const dx = col - field.lastCol;
-        const dy = row - field.lastRow;
-        const steps = Math.max(1, Math.ceil(Math.hypot(dx, dy) * 2.5));
-        for (let s = 1; s <= steps; s += 1) {
-          const t = s / steps;
-          stamp(field, (field.lastCol + dx * t) * CELL, (field.lastRow + dy * t) * CELL);
-        }
-      }
-      field.lastCol = col;
-      field.lastRow = row;
-      field.lastMove = performance.now();
-      field.fading = false;
-    };
-
-    const drawField = (field, now) => {
-      if (!field.grid) return false;
-
-      // Idle 10s (or left the zone) → soft fade, then disappear
-      const idle = !field.hover || !field.active || now - field.lastMove > IDLE_MS;
-      if (idle) field.fading = true;
-
-      if (field.fading && field.hasInk) {
-        let left = 0;
-        for (let i = 0; i < field.grid.length; i += 1) {
-          if (field.grid[i] <= 0) continue;
-          field.grid[i] -= FADE_PER_FRAME;
-          if (field.grid[i] <= 0.02) field.grid[i] = 0;
-          else left += 1;
-        }
-        if (left === 0) {
-          clearField(field);
-          return false;
-        }
-      } else if (!field.hasInk) {
-        return false;
-      }
-
-      const { ctx, width, height, cols, rows, grid } = field;
-      ctx.clearRect(0, 0, width, height);
-      ctx.font = `500 ${CELL - 3}px "IBM Plex Mono", ui-monospace, monospace`;
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-
-      let any = false;
-      for (let r = 0; r < rows; r += 1) {
-        for (let c = 0; c < cols; c += 1) {
-          const n = grid[r * cols + c];
-          if (n < 0.05) continue;
-          any = true;
-
-          // cool.mp4 soft ramp — clean, no heavy # %
-          let ch;
-          if (n < 0.22) ch = ".";
-          else if (n < 0.38) ch = ",";
-          else if (n < 0.52) ch = ":";
-          else if (n < 0.68) ch = ";";
-          else if (n < 0.84) ch = "+";
-          else ch = "*";
-
-          ctx.fillStyle = `rgba(210, 228, 255, ${0.16 + n * 0.55})`;
-          ctx.fillText(ch, c * CELL + CELL * 0.5, r * CELL + CELL * 0.5);
-        }
-      }
-
-      field.hasInk = any;
-      if (!any) {
-        clearField(field);
-        return false;
-      }
-      return true;
-    };
-
-    let raf = 0;
-    const tick = (now) => {
-      let living = false;
-      for (let i = 0; i < fields.length; i += 1) {
-        if (drawField(fields[i], now || performance.now())) living = true;
-      }
-      raf = living ? requestAnimationFrame(tick) : 0;
+      if (hover || presence > 0.02) raf = requestAnimationFrame(draw);
     };
 
     const kick = () => {
-      if (!raf) raf = requestAnimationFrame(tick);
+      if (!raf) raf = requestAnimationFrame(draw);
     };
 
-    const io = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          const field = fields.find((f) => f.canvas === entry.target);
-          if (!field) return;
-          field.active = entry.isIntersecting;
-          if (!entry.isIntersecting) {
-            field.hover = false;
-            field.fading = true;
-            kick();
-          }
-        });
+    const toLocal = (e) => {
+      const rect = canvas.getBoundingClientRect();
+      if (rect.width < 1 || rect.height < 1) return null;
+      return {
+        x: ((e.clientX - rect.left) / rect.width) * width,
+        y: ((e.clientY - rect.top) / rect.height) * height,
+      };
+    };
+
+    resize();
+    let resizeTimer = 0;
+    window.addEventListener(
+      "resize",
+      () => {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(resize, 150);
       },
-      { threshold: 0.05, rootMargin: "40px" }
+      { passive: true }
     );
 
-    let resizeTimer = 0;
-    window.addEventListener("resize", () => {
-      clearTimeout(resizeTimer);
-      resizeTimer = setTimeout(() => {
-        fields.forEach(resizeField);
-      }, 100);
-    });
+    window.addEventListener(
+      "scroll",
+      () => {
+        hover = false;
+        presence = 0;
+        lastMove = 0;
+        if (raf) {
+          cancelAnimationFrame(raf);
+          raf = 0;
+        }
+        ctx.clearRect(0, 0, width, height);
+      },
+      { passive: true }
+    );
 
-    fields.forEach((field) => {
-      resizeField(field);
-      io.observe(field.canvas);
+    zone.addEventListener(
+      "pointermove",
+      (e) => {
+        const p = toLocal(e);
+        if (!p) return;
+        hover = true;
+        lastMove = performance.now();
+        tx = p.x;
+        ty = p.y;
+        kick();
+      },
+      { passive: true }
+    );
 
-      field.zone.addEventListener(
-        "pointerenter",
-        (e) => {
-          if (!field.active) return;
-          field.hover = true;
-          const p = pointerToCanvas(field, e);
-          if (p) paintPath(field, p.x, p.y);
-          kick();
-        },
-        { passive: true }
-      );
-
-      field.zone.addEventListener(
-        "pointerleave",
-        () => {
-          field.hover = false;
-          field.lastCol = -1;
-          field.lastRow = -1;
-          field.fading = true; // dissolve trail when you leave
-          kick();
-        },
-        { passive: true }
-      );
-
-      field.zone.addEventListener(
-        "pointermove",
-        (e) => {
-          if (!field.active) return;
-          field.hover = true;
-          const p = pointerToCanvas(field, e);
-          if (!p) return;
-          paintPath(field, p.x, p.y);
-          kick();
-        },
-        { passive: true }
-      );
-    });
+    zone.addEventListener(
+      "pointerleave",
+      () => {
+        hover = false;
+        kick();
+      },
+      { passive: true }
+    );
 
     document.addEventListener("visibilitychange", () => {
-      if (document.hidden) {
-        cancelAnimationFrame(raf);
-        raf = 0;
-        fields.forEach((f) => {
-          f.hover = false;
-          clearField(f);
-        });
-      }
+      if (!document.hidden) return;
+      hover = false;
+      presence = 0;
+      lastMove = 0;
+      cancelAnimationFrame(raf);
+      raf = 0;
+      ctx.clearRect(0, 0, width, height);
     });
   })();
+
+  // Copy Discord username (no public profile URL without numeric ID)
+  document.querySelectorAll("[data-copy]").forEach((el) => {
+    el.addEventListener("click", async (e) => {
+      e.preventDefault();
+      const text = el.getAttribute("data-copy");
+      if (!text) return;
+      const label = el.textContent;
+      try {
+        await navigator.clipboard.writeText(text);
+        el.textContent = "Copied!";
+      } catch {
+        window.prompt("Copy Discord username:", text);
+        return;
+      }
+      window.setTimeout(() => {
+        el.textContent = label;
+      }, 1400);
+    });
+  });
 })();
