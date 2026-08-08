@@ -399,26 +399,20 @@
     { passive: true }
   );
 
-  // ASCII spotlight (your liked version) — polished with ascii-motion density feel
+  // ASCII spotlight — follows cursor; fades away after 10s idle
   (() => {
     const canvas = document.querySelector('[data-ascii="hero"]');
     if (!canvas) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     if (window.matchMedia("(hover: none), (pointer: coarse)").matches) return;
 
-    // Richer shading like ascii-motion, still only around the cursor
-    const RAMP = ".:-+*=%#@";
-    const CELL = 16;
-    const RADIUS = 7.2;
-    const IDLE_MS = 10000;
+    const RAMP = ".:;+*%#";
+    const CELL = 18;
+    const RADIUS = 6;
+    const IDLE_MS = 10000; // stay still this long → ASCII disappears
     const zone = canvas.closest(".hero") || canvas.parentElement;
     const ctx = canvas.getContext("2d", { alpha: true, desynchronized: true });
     if (!zone || !ctx) return;
-
-    const hash = (x, y) => {
-      const s = Math.sin(x * 127.1 + y * 311.7) * 43758.5453;
-      return s - Math.floor(s);
-    };
 
     let width = 0;
     let height = 0;
@@ -433,7 +427,6 @@
     let raf = 0;
     let lastDraw = 0;
     let lastMove = 0;
-    let t0 = performance.now();
 
     const resize = () => {
       const rect = zone.getBoundingClientRect();
@@ -450,25 +443,27 @@
 
     const draw = (now) => {
       raf = 0;
+      // Mouse still for 10s → treat as inactive and fade out
       const active = hover && now - lastMove < IDLE_MS;
-      presence += ((active ? 1 : 0) - presence) * (active ? 0.22 : 0.07);
-      mx += (tx - mx) * 0.22;
-      my += (ty - my) * 0.22;
+      presence += ((active ? 1 : 0) - presence) * (active ? 0.2 : 0.08);
+      mx += (tx - mx) * 0.28;
+      my += (ty - my) * 0.28;
 
       if (presence < 0.02) {
         ctx.clearRect(0, 0, width, height);
         presence = 0;
+        // Keep a light tick while hovering so idle timeout can still fire
         if (hover) raf = requestAnimationFrame(draw);
         return;
       }
 
-      if (now - lastDraw < 30) {
+      // Cap ~30fps while visible
+      if (now - lastDraw < 32) {
         raf = requestAnimationFrame(draw);
         return;
       }
       lastDraw = now;
 
-      const t = (now - t0) * 0.001;
       const spotR = RADIUS * CELL;
       const spotR2 = spotR * spotR;
       const c0 = Math.max(0, ((mx - spotR) / CELL) | 0);
@@ -477,10 +472,10 @@
       const r1 = Math.min(rows - 1, Math.ceil((my + spotR) / CELL));
 
       ctx.clearRect(0, 0, width, height);
-      ctx.font = `500 ${CELL - 3}px "IBM Plex Mono", ui-monospace, monospace`;
+      ctx.font = `500 ${CELL - 4}px "IBM Plex Mono", ui-monospace, monospace`;
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      ctx.fillStyle = "#c6ddff";
+      ctx.fillStyle = "#cee0ff";
 
       for (let r = r0; r <= r1; r += 1) {
         for (let c = c0; c <= c1; c += 1) {
@@ -488,27 +483,21 @@
           const y = r * CELL + CELL * 0.5;
           const dx = x - mx;
           const dy = y - my;
-
-          // Organic blotch + slight shimmer (ascii-motion texture, not a hard ring)
-          const warp = 0.82 + 0.18 * hash(c * 0.9 + t * 0.35, r * 0.9 - t * 0.28);
-          const d2 = (dx * dx * 0.82 + dy * dy * 1.18) * warp;
+          // Irregular blotch (not a perfect circle/ring)
+          const d2 = dx * dx * 0.85 + dy * dy * 1.2;
           if (d2 > spotR2) continue;
 
           const fall = 1 - Math.sqrt(d2) / spotR;
-          const grain = 0.72 + 0.28 * hash(c + 3.1, r - 1.7);
-          let n = fall * fall * (0.35 + fall * 0.65) * grain * presence;
-
-          // Soft outer mist of dots
-          if (fall < 0.35) n *= 0.55 + fall;
+          let n = fall * fall * presence;
 
           const bx = x / width - 0.28;
           const by = y / height - 0.48;
           const hole = Math.max(0, 1 - Math.sqrt(bx * bx + by * by) / 0.22);
-          n *= 1 - hole * hole * 0.62;
-          if (n < 0.07) continue;
+          n *= 1 - hole * hole * 0.6;
+          if (n < 0.08) continue;
 
-          const idx = Math.min(RAMP.length - 1, (n * (RAMP.length - 0.001)) | 0);
-          ctx.globalAlpha = (0.14 + n * 0.62) * presence;
+          const idx = Math.min(RAMP.length - 1, (n * RAMP.length) | 0);
+          ctx.globalAlpha = (0.16 + n * 0.55) * presence;
           ctx.fillText(RAMP[idx], x, y);
         }
       }
