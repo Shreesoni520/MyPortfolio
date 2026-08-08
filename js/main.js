@@ -399,7 +399,7 @@
     { passive: true }
   );
 
-  // ASCII spotlight — follows cursor only (no paint trail, no always-on loop)
+  // ASCII spotlight — follows cursor; fades away after 10s idle
   (() => {
     const canvas = document.querySelector('[data-ascii="hero"]');
     if (!canvas) return;
@@ -409,6 +409,7 @@
     const RAMP = ".:;+*%#";
     const CELL = 18;
     const RADIUS = 6;
+    const IDLE_MS = 10000; // stay still this long → ASCII disappears
     const zone = canvas.closest(".hero") || canvas.parentElement;
     const ctx = canvas.getContext("2d", { alpha: true, desynchronized: true });
     if (!zone || !ctx) return;
@@ -425,6 +426,7 @@
     let presence = 0;
     let raf = 0;
     let lastDraw = 0;
+    let lastMove = 0;
 
     const resize = () => {
       const rect = zone.getBoundingClientRect();
@@ -441,18 +443,22 @@
 
     const draw = (now) => {
       raf = 0;
-      presence += ((hover ? 1 : 0) - presence) * (hover ? 0.2 : 0.12);
+      // Mouse still for 10s → treat as inactive and fade out
+      const active = hover && now - lastMove < IDLE_MS;
+      presence += ((active ? 1 : 0) - presence) * (active ? 0.2 : 0.08);
       mx += (tx - mx) * 0.28;
       my += (ty - my) * 0.28;
 
       if (presence < 0.02) {
         ctx.clearRect(0, 0, width, height);
         presence = 0;
+        // Keep a light tick while hovering so idle timeout can still fire
+        if (hover) raf = requestAnimationFrame(draw);
         return;
       }
 
-      // Cap ~30fps while hovering
-      if (now - lastDraw < 32 && hover) {
+      // Cap ~30fps while visible
+      if (now - lastDraw < 32) {
         raf = requestAnimationFrame(draw);
         return;
       }
@@ -529,6 +535,7 @@
       () => {
         hover = false;
         presence = 0;
+        lastMove = 0;
         if (raf) {
           cancelAnimationFrame(raf);
           raf = 0;
@@ -544,6 +551,7 @@
         const p = toLocal(e);
         if (!p) return;
         hover = true;
+        lastMove = performance.now();
         tx = p.x;
         ty = p.y;
         kick();
@@ -564,6 +572,7 @@
       if (!document.hidden) return;
       hover = false;
       presence = 0;
+      lastMove = 0;
       cancelAnimationFrame(raf);
       raf = 0;
       ctx.clearRect(0, 0, width, height);
