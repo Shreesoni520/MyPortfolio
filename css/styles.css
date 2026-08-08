@@ -27,6 +27,8 @@
 
 html {
   scroll-behavior: smooth;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -41,12 +43,18 @@ body {
   color: var(--ink);
   line-height: 1.6;
   overflow-x: hidden;
+  overflow-y: auto;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
 
 body.is-loading {
   overflow: hidden;
+}
+
+body.is-ready {
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 a { color: inherit; text-decoration: none; }
@@ -138,16 +146,6 @@ body:not(.is-loading) .loader-bar i {
   to { transform: scaleX(1); }
 }
 
-/* ——— Atmosphere ——— */
-.noise {
-  pointer-events: none;
-  position: fixed;
-  inset: 0;
-  z-index: 1;
-  opacity: 0.035;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-}
-
 main,
 .site-footer {
   position: relative;
@@ -165,8 +163,7 @@ main,
   justify-content: space-between;
   gap: 1.5rem;
   padding: 0 clamp(1.25rem, 4vw, 3.5rem);
-  background: linear-gradient(to bottom, rgba(7, 7, 8, 0.94), rgba(7, 7, 8, 0.55) 70%, transparent);
-  backdrop-filter: blur(6px);
+  background: linear-gradient(to bottom, rgba(7, 7, 8, 0.96), rgba(7, 7, 8, 0.62) 70%, transparent);
 }
 
 .logo {
@@ -316,7 +313,6 @@ main,
   top: 12%;
   border: 1px solid rgba(243, 238, 231, 0.08);
   border-radius: 50%;
-  animation: spin 40s linear infinite;
 }
 
 .hero-ring::before {
@@ -482,7 +478,7 @@ main,
   width: 100%;
   height: 100%;
   z-index: 1;
-  opacity: 0.85;
+  opacity: 0.78;
 }
 
 .ascii-field--about {
@@ -490,7 +486,7 @@ main,
   width: 100%;
   height: 100%;
   z-index: 0;
-  opacity: 0.8;
+  opacity: 0.7;
 }
 
 .hero-top,
@@ -753,9 +749,9 @@ body.is-ready .hero-bottom { animation-delay: 0.75s; }
   overflow: hidden;
   background: var(--tone, var(--surface));
   border: 1px solid var(--line);
-  transform: scale(0.92);
-  opacity: 0.55;
-  transition: transform 0.75s var(--ease), opacity 0.75s var(--ease);
+  transform: scale(0.97);
+  opacity: 0.88;
+  transition: transform 0.55s var(--ease), opacity 0.55s var(--ease);
 }
 
 .work-item:hover .work-preview {
@@ -954,7 +950,6 @@ body.is-ready .hero-bottom { animation-delay: 0.75s; }
   -webkit-user-drag: none;
   user-select: none;
   pointer-events: none;
-  filter: saturate(0.95) contrast(1.03);
 }
 
 .about-photo::after {

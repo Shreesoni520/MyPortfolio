@@ -10,18 +10,17 @@ Personal portfolio for **Shree** — a creative frontend developer focused on ex
 
 A dark, ice-blue portfolio built with plain HTML, CSS, and JavaScript. No framework bloat — just sharp structure, custom interaction, and performance-minded motion.
 
-Designed to feel like a product, not a template: custom cursor, ASCII hover fields, signal-line scramble effects, and a toolkit marquee that stays smooth on scroll.
+Designed to feel like a product, not a template: lightweight ASCII hover motion, signal-line scramble effects, and a toolkit marquee that stays smooth on scroll.
 
 ---
 
 ## Features
 
-- **Custom cursor** — hollow ring + tip with hover/click states
-- **ASCII fields** — soft density cloud on Hero & About, locked to the cursor tip
+- **ASCII spotlight** — soft cursor-follow cloud on the hero (performance-minded)
 - **Signal lines** — scramble text on hover/focus
 - **Work showcase** — live projects with clean previews
 - **Process section** — scroll-aware step highlights
-- **Toolkit marquee** — dual-direction tech chips with spotlight
+- **Toolkit marquee** — dual-direction tech chips
 - **Live stats** — public repo count from GitHub + live sites linked on the page
 - **Responsive layout** — desktop polish, mobile nav, reduced-motion support
 
