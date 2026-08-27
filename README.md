@@ -128,8 +128,14 @@ Open to freelance, collabs, and roles where craft actually matters.
 
 ---
 
+## Author
+
+**Krishna Soni**
+
+---
+
 ## License
 
 Personal work. Read it, learn from it — please don’t ship the site as your own.
 
-Designed and coded with intention by **Shree**.
+Designed and coded with intention by **Krishna Soni**.
