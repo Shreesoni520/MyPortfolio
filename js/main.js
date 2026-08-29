@@ -1,5 +1,5 @@
 import Lenis from "https://cdn.jsdelivr.net/npm/lenis@1.3.25/+esm";
-import { createAsciiMatrix } from "./ascii-matrix.js?v=20260809i";
+import { createAsciiMatrix } from "./ascii-matrix.js?v=20260829f";
 
 (() => {
   const body = document.body;
@@ -24,16 +24,16 @@ import { createAsciiMatrix } from "./ascii-matrix.js?v=20260809i";
     }
   });
 
-  // Lenis smooth scroll (same feel as premium portfolios like jigneshis)
+  // Lenis smooth scroll — soft lerp feel, no harsh stops
   let lenis = null;
   if (!reduceMotion) {
     lenis = new Lenis({
-      duration: 1.2,
-      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      lerp: 0.075,
       smoothWheel: true,
       syncTouch: false,
-      touchMultiplier: 1.4,
-      wheelMultiplier: 1,
+      touchMultiplier: 1.25,
+      wheelMultiplier: 0.92,
+      autoResize: true,
     });
     lenis.stop();
     const lenisLoop = (time) => {
@@ -208,7 +208,12 @@ import { createAsciiMatrix } from "./ascii-matrix.js?v=20260809i";
       if (!target) return;
       e.preventDefault();
       if (lenis) {
-        lenis.scrollTo(target, { offset: -8, duration: 1.35 });
+        lenis.scrollTo(target, {
+          offset: -12,
+          lerp: 0.08,
+          duration: 1.55,
+          easing: (t) => 1 - Math.pow(1 - t, 3.2),
+        });
       } else {
         target.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
       }
@@ -378,18 +383,39 @@ import { createAsciiMatrix } from "./ascii-matrix.js?v=20260809i";
     setActive(steps[0]);
   })();
 
-  // Work row tilt on mouse
+  // Work row tilt — eased follow so it doesn’t jitter
   document.querySelectorAll("[data-work]").forEach((row) => {
     const preview = row.querySelector(".work-preview");
-    if (!preview) return;
-    row.addEventListener("pointermove", (e) => {
-      const rect = row.getBoundingClientRect();
-      const x = (e.clientX - rect.left) / rect.width - 0.5;
-      const y = (e.clientY - rect.top) / rect.height - 0.5;
-      preview.style.transform = `scale(1) translate(${x * 12}px, ${y * 10}px)`;
-    });
+    if (!preview || reduceMotion) return;
+    let tx = 0;
+    let ty = 0;
+    let cx = 0;
+    let cy = 0;
+    let raf = 0;
+    const tick = () => {
+      cx += (tx - cx) * 0.14;
+      cy += (ty - cy) * 0.14;
+      preview.style.transform = `scale(1) translate3d(${cx}px, ${cy}px, 0)`;
+      if (Math.abs(tx - cx) > 0.05 || Math.abs(ty - cy) > 0.05) {
+        raf = requestAnimationFrame(tick);
+      } else {
+        raf = 0;
+      }
+    };
+    row.addEventListener(
+      "pointermove",
+      (e) => {
+        const rect = row.getBoundingClientRect();
+        tx = ((e.clientX - rect.left) / rect.width - 0.5) * 10;
+        ty = ((e.clientY - rect.top) / rect.height - 0.5) * 8;
+        if (!raf) raf = requestAnimationFrame(tick);
+      },
+      { passive: true }
+    );
     row.addEventListener("pointerleave", () => {
-      preview.style.transform = "";
+      tx = 0;
+      ty = 0;
+      if (!raf) raf = requestAnimationFrame(tick);
     });
   });
 
@@ -418,25 +444,34 @@ import { createAsciiMatrix } from "./ascii-matrix.js?v=20260809i";
 
   mobileNav?.querySelectorAll("a").forEach((a) => a.addEventListener("click", closeNav));
 
-  // Soft parallax on hero ring (throttled)
+  // Soft parallax on hero ring — lerped follow
   const heroRing = document.querySelector(".hero-ring");
-  let ringRaf = 0;
-  let ringX = 0;
-  let ringY = 0;
-  window.addEventListener(
-    "pointermove",
-    (e) => {
-      if (!heroRing) return;
-      ringX = (e.clientX / window.innerWidth - 0.5) * 24;
-      ringY = (e.clientY / window.innerHeight - 0.5) * 16;
-      if (ringRaf) return;
-      ringRaf = requestAnimationFrame(() => {
+  if (heroRing && !reduceMotion) {
+    let ringTx = 0;
+    let ringTy = 0;
+    let ringCx = 0;
+    let ringCy = 0;
+    let ringRaf = 0;
+    const ringTick = () => {
+      ringCx += (ringTx - ringCx) * 0.08;
+      ringCy += (ringTy - ringCy) * 0.08;
+      heroRing.style.transform = `translate3d(${ringCx}px, ${ringCy}px, 0)`;
+      if (Math.abs(ringTx - ringCx) > 0.04 || Math.abs(ringTy - ringCy) > 0.04) {
+        ringRaf = requestAnimationFrame(ringTick);
+      } else {
         ringRaf = 0;
-        heroRing.style.translate = `${ringX}px ${ringY}px`;
-      });
-    },
-    { passive: true }
-  );
+      }
+    };
+    window.addEventListener(
+      "pointermove",
+      (e) => {
+        ringTx = (e.clientX / window.innerWidth - 0.5) * 18;
+        ringTy = (e.clientY / window.innerHeight - 0.5) * 12;
+        if (!ringRaf) ringRaf = requestAnimationFrame(ringTick);
+      },
+      { passive: true }
+    );
+  }
 
   // Full-site + grid; cursor glitch only in the hero section
   const matrixCanvas = document.getElementById("ascii-matrix");

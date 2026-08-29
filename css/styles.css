@@ -10,10 +10,11 @@
   --warm: #e8d5b5;
   --font-display: "Bricolage Grotesque", sans-serif;
   --font-body: "Sora", sans-serif;
-  --ease: cubic-bezier(0.16, 1, 0.3, 1);
-  --ease-soft: cubic-bezier(0.22, 1, 0.36, 1);
-  --dur: 0.7s;
-  --dur-slow: 1.15s;
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-soft: cubic-bezier(0.33, 1, 0.68, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur: 0.85s;
+  --dur-slow: 1.25s;
   --header: 5rem;
 }
 
@@ -51,7 +52,9 @@ body {
   overflow-x: hidden;
   overflow-y: auto;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+  font-optical-sizing: auto;
 }
 
 body.is-loading {
@@ -134,6 +137,10 @@ button {
   transform: scaleX(0);
   transform-origin: left center;
   will-change: transform;
+}
+
+body:not(.is-loading) .scroll-progress i {
+  transition: transform 0.16s linear;
 }
 
 /* Shared load fill — exact same duration + easing */
@@ -754,8 +761,11 @@ body.is-ready .hero-bottom { animation-delay: 0.75s; }
   border: 1px solid var(--line);
   transform: scale(0.98);
   opacity: 1;
-  transition: transform 0.55s var(--ease), box-shadow 0.55s var(--ease);
+  transition:
+    transform 0.7s var(--ease-out),
+    box-shadow 0.7s var(--ease-soft);
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+  will-change: transform;
 }
 
 .work-item:hover .work-preview {
@@ -769,7 +779,6 @@ body.is-ready .hero-bottom { animation-delay: 0.75s; }
   object-fit: cover;
   object-position: top center;
   display: block;
-  -webkit-font-smoothing: antialiased;
 }
 
 .preview-frame {
@@ -1457,20 +1466,18 @@ body.is-ready .hero-bottom { animation-delay: 0.75s; }
 /* ——— Reveal on scroll ——— */
 .reveal-up {
   opacity: 0;
-  transform: translateY(40px);
-  filter: blur(8px);
+  transform: translate3d(0, 22px, 0);
   transition:
-    opacity 1.15s var(--ease),
-    transform 1.15s var(--ease),
-    filter 1.15s var(--ease);
+    opacity 0.95s var(--ease-out),
+    transform 0.95s var(--ease-out);
   transition-delay: var(--delay, 0ms);
-  will-change: opacity, transform, filter;
+  will-change: opacity, transform;
 }
 
 .reveal-up.is-in {
   opacity: 1;
-  transform: translateY(0);
-  filter: blur(0);
+  transform: translate3d(0, 0, 0);
+  will-change: auto;
 }
 
 /* ——— Responsive ——— */
