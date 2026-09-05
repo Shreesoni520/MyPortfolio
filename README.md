@@ -113,7 +113,7 @@ Accent `#8ec5ff` on near-black `#070708`. Display type for the name. Mono for th
 | **Portfolio** | This site — ASCII UI, selected work, contact | [shreesoni.vercel.app](https://shreesoni.vercel.app) |
 | **Extract** | Private file sharing with timed access | [shree-s-extractions.vercel.app](https://shree-s-extractions.vercel.app) |
 | **Playlist** | Personal music room — YouTube tracks & playlists | [shree-s-my-playlist.vercel.app](https://shree-s-my-playlist.vercel.app) |
-| **ShreeVault** | Private finance desk — ledger, accounts, recipes, grocery | [shree-s-vault.vercel.app](https://shree-s-vault.vercel.app) |
+| **Shree'sVault** | Private finance desk — ledger, accounts, recipes, grocery | [shree-s-vault.vercel.app](https://shree-s-vault.vercel.app) |
 | **More** | Code, experiments, whatever is next | [github.com/Shreesoni520](https://github.com/Shreesoni520) |
 
 ---
